@@ -4,4 +4,7 @@ numpy
 yfinance
 plotly
 scikit-learn
+matplotlib
+seaborn
+scikitplot
 ta  # technical analysis library (optional, for future indicators)
