@@ -22,7 +22,7 @@ def add_technical_indicators(df):
     df['MACD_Hist'] = macd.macd_diff()
 
     # ===== Bollinger Bands (20,2) =====
-    bb = BollingerBands(close=df['Close'], window=20, window_dev=2)
+    bb = BollingerBands(close=df['Close'], window=50, window_dev=2)
     df['BB_High'] = bb.bollinger_hband()
     df['BB_Low'] = bb.bollinger_lband()
     df['BB_Middle'] = bb.bollinger_mavg()
