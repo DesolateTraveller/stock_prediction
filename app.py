@@ -187,35 +187,82 @@ st.divider()
 #---------------------------------------------------------------------------------------------------------------------------------
 #col_sidebar, col_main = st.columns([0.25, 0.75])
 
-# Initialize session state for watchlist
-if 'watchlist' not in st.session_state:
-    st.session_state.watchlist = []
-
-
 if st.button("🔄 Refresh Data", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
         
-col1, col2 = st.columns(2)
+# Initialize session state for watchlist (do this once at the top of app.py if not done)
+if 'watchlist' not in st.session_state:
+    st.session_state.watchlist = []
+
+col1, col2, col3 = st.columns((0.3,0.4,0.3))
+
 with col1:
-    
     df = fetch_nse_data()
+    
     with st.expander("📈 Stock Selection", expanded=True):
-        selected_stock = st.selectbox("🔍 Select Stock",options=[""] + sorted(df["Symbol"].tolist()),index=0)
+        selected_from_dropdown = st.selectbox(
+            "🔍 Select Stock",
+            options=[""] + sorted(df["Symbol"].tolist()),
+            index=0,
+            key="stock_selector"
+        )
+    
+with col2:
+    
+    with st.expander("📌 My Watchlist", expanded=True):
+        
+        subcol1, subcol2 = st.columns(2)
+        with subcol1:
+            add_stock = st.selectbox(
+                "➕ Add to Watchlist",
+                options=[""] + sorted(df["Symbol"].tolist()),
+                index=0,
+                key="watchlist_add"
+            )
+            if st.button("✅ Add", key="add_to_watchlist", use_container_width=True):
+                if add_stock and add_stock not in st.session_state.watchlist:
+                    st.session_state.watchlist.append(add_stock)
+                    st.rerun()
+                
+        with subcol2:
+            st.markdown("**Saved Stocks:**")
+            if st.session_state.watchlist:
+                for i, stock in enumerate(st.session_state.watchlist):
+                    wl_col1, wl_col2 = st.columns([4, 1])
+                    with wl_col1:
+                        # Clicking this button selects the stock
+                        if st.button(stock, key=f"select_{i}", use_container_width=True):
+                            st.session_state.selected_stock = stock
+                    with wl_col2:
+                        if st.button("🗑️", key=f"remove_{i}"):
+                            st.session_state.watchlist.remove(stock)
+                            # Clear selection if removed stock was active
+                            if hasattr(st.session_state, 'selected_stock') and st.session_state.selected_stock == stock:
+                                del st.session_state.selected_stock
+                            st.rerun()
+            else:
+                st.info("No stocks saved yet.")
+
+    if hasattr(st.session_state, 'selected_stock'):
+        selected_stock = st.session_state.selected_stock
+    else:
+        selected_stock = selected_from_dropdown
+
+with col3:
     
     if selected_stock:
-        with col2:
-        
-            with st.expander("📅 Timeframe", expanded=True):
-                timeframe = st.selectbox(
-                    "Chart Interval",
-                    options=["1d", "5m", "15m", "1h", "1wk"],
-                    index=0
-                )
-                period_map = {"5m": "60d", "15m": "60d", "1h": "730d", "1d": "3mo", "1wk": "2y"}
-                period = period_map[timeframe]
+        with st.expander("📅 Timeframe", expanded=True):
+            timeframe = st.selectbox(
+                "Chart Interval",
+                options=["1d", "5m", "15m", "1h", "1wk"],
+                index=0,
+                key="timeframe_selector"
+            )
+            period_map = {"5m": "60d", "15m": "60d", "1h": "730d", "1d": "3mo", "1wk": "2y"}
+            period = period_map[timeframe]
     else:
-        st.info("👈 Select a stock to begin analysis.")
+        st.info("👈 Select a stock from dropdown or your watchlist to begin analysis.")
 
 st.divider()
 
